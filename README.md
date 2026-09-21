@@ -30,7 +30,7 @@ https://203.0.113.10.sslip.io
 Jalankan di VPS:
 
 ```bash
-rm -rf /tmp/sslip-app-installer && git clone --depth=1 git@github.com:usnulnifah-web/sslip-app-installer.git /tmp/sslip-app-installer && sudo bash /tmp/sslip-app-installer/install-sslip.sh
+rm -rf /tmp/sslip-app-installer && git clone --depth=1 https://github.com/usnulnifah-web/sslip-app-installer.git /tmp/sslip-app-installer && sudo bash /tmp/sslip-app-installer/install-sslip.sh
 ```
 
 Installer otomatis:

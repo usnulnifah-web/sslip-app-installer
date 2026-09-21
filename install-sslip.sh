@@ -7,7 +7,7 @@ set -Eeuo pipefail
 APP_NAME="scriptstore-provider"
 APP_DIR="/opt/$APP_NAME"
 SERVICE_NAME="$APP_NAME"
-REPO_URL="${REPO_URL:-git@github.com:usnulnifah-web/installweb.git}"
+REPO_URL="${REPO_URL:-https://github.com/usnulnifah-web/installweb.git}"
 BRANCH="${BRANCH:-main}"
 DB_NAME="${DB_NAME:-scriptstore}"
 DB_USER="${DB_USER:-scriptstore_user}"
