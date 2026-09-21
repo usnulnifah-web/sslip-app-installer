@@ -129,6 +129,7 @@ SMTP_FROM=
 
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
+GOOGLE_CALLBACK_URL=https://$DOMAIN/api/auth/google/callback
 
 VITE_APP_ID=
 VITE_OAUTH_PORTAL_URL=
@@ -144,7 +145,7 @@ chmod 600 .env
 
 log "Menginstall dependency dan menyiapkan database..."
 pnpm install --frozen-lockfile
-pnpm db:push
+pnpm db:migrate
 pnpm check
 pnpm build
 

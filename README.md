@@ -41,7 +41,7 @@ Installer otomatis:
 4. Membuat database lokal dan password acak.
 5. Clone atau memperbarui aplikasi ScriptStore.
 6. Mengisi `.env` dengan domain HTTPS dan database lokal.
-7. Menjalankan migrasi, TypeScript check, dan production build.
+7. Menerapkan migration database yang sudah di-commit, menjalankan TypeScript check, dan production build. Installer tidak membuat migration baru di VPS.
 8. Membuat service systemd agar aplikasi otomatis hidup setelah reboot.
 9. Mengaktifkan Nginx reverse proxy.
 10. Meminta sertifikat SSL Let's Encrypt.
