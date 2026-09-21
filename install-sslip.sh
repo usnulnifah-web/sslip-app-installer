@@ -12,6 +12,7 @@ BRANCH="${BRANCH:-main}"
 DB_NAME="${DB_NAME:-scriptstore}"
 DB_USER="${DB_USER:-scriptstore_user}"
 PORT="${PORT:-3000}"
+ORIGINAL_USER="${SUDO_USER:-}"
 
 log() { printf '\033[1;32m[SSLIP-INSTALL]\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m[WARNING]\033[0m %s\n' "$*" >&2; }
@@ -21,6 +22,17 @@ fail() { printf '\033[1;31m[ERROR]\033[0m %s\n' "$*" >&2; exit 1; }
 command -v apt-get >/dev/null 2>&1 || fail "Installer ini membutuhkan Ubuntu/Debian dengan apt-get."
 command -v systemctl >/dev/null 2>&1 || fail "systemd tidak tersedia."
 command -v curl >/dev/null 2>&1 || fail "curl belum terpasang."
+
+# Jika installer dijalankan dengan sudo, tetap gunakan kunci SSH user yang
+# memulai installer untuk clone repository privat, bukan kunci root.
+if [ -n "$ORIGINAL_USER" ] && [ "$ORIGINAL_USER" != "root" ]; then
+  ORIGINAL_HOME="$(getent passwd "$ORIGINAL_USER" | cut -d: -f6 || true)"
+  if [ -f "$ORIGINAL_HOME/.ssh/id_ed25519" ]; then
+    export GIT_SSH_COMMAND="ssh -i $ORIGINAL_HOME/.ssh/id_ed25519 -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+  elif [ -f "$ORIGINAL_HOME/.ssh/id_rsa" ]; then
+    export GIT_SSH_COMMAND="ssh -i $ORIGINAL_HOME/.ssh/id_rsa -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+  fi
+fi
 
 if [ -f "$APP_DIR/.env" ] || systemctl is-active --quiet "$SERVICE_NAME" 2>/dev/null; then
   warn "Instalasi sebelumnya terdeteksi di $APP_DIR. File aplikasi akan diperbarui dan service akan direstart."
