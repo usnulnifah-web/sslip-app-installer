@@ -34,7 +34,7 @@ if [ -n "$ORIGINAL_USER" ] && [ "$ORIGINAL_USER" != "root" ]; then
   fi
 fi
 
-if [ -f "$APP_DIR/.env" ] || systemctl is-active --quiet "$SERVICE_NAME" 2>/dev/null; then
+if { [ -f "$APP_DIR/.env" ] || systemctl is-active --quiet "$SERVICE_NAME" 2>/dev/null; } && [ "${FORCE_REINSTALL:-0}" != "1" ]; then
   warn "Instalasi sebelumnya terdeteksi di $APP_DIR. File aplikasi akan diperbarui dan service akan direstart."
   read -r -p "Ketik REINSTALL-SSL untuk melanjutkan: " CONFIRM
   [ "$CONFIRM" = "REINSTALL-SSL" ] || fail "Instalasi dibatalkan."
