@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+LOG_FILE="${INSTALL_LOG_FILE:-/var/log/sslip-app-installer.log}"
+if [ "${EUID:-$(id -u)}" -eq 0 ]; then
+  mkdir -p "$(dirname "$LOG_FILE")"
+  touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/tmp/sslip-app-installer.log"
+  exec > >(tee -a "$LOG_FILE") 2>&1
+fi
+
+CURRENT_STEP="startup"
+trap 'rc=$?; printf "\033[1;31m[ERROR]\033[0m Step gagal: %s (exit %s)\n" "$CURRENT_STEP" "$rc" >&2; printf "Log lengkap: %s\n" "$LOG_FILE" >&2; exit "$rc"' ERR
+
 # Auto installer ScriptStore Provider + temporary sslip.io domain + HTTPS.
 # Target: fresh Ubuntu/Debian VPS with a public IPv4 address.
 
@@ -15,7 +25,7 @@ PORT="${PORT:-3000}"
 RESET_DATABASE="${RESET_DATABASE:-0}"
 ORIGINAL_USER="${SUDO_USER:-}"
 
-log() { printf '\033[1;32m[SSLIP-INSTALL]\033[0m %s\n' "$*"; }
+log() { printf '\033[1;32m[SSLIP-INSTALL]\033[0m %s\n' "$*"; CURRENT_STEP="$*"; }
 warn() { printf '\033[1;33m[WARNING]\033[0m %s\n' "$*" >&2; }
 fail() { printf '\033[1;31m[ERROR]\033[0m %s\n' "$*" >&2; exit 1; }
 
@@ -56,14 +66,22 @@ if ! command -v node >/dev/null 2>&1 || [ "$(node -p "process.versions.node.spli
   apt-get install -y nodejs
 fi
 
-if ! command -v pnpm >/dev/null 2>&1; then
-  log "Memasang pnpm..."
-  corepack enable 2>/dev/null || true
-  corepack prepare pnpm@10.4.1 --activate 2>/dev/null || npm install --global pnpm@10.4.1
+# Jangan bergantung pada Corepack: beberapa image Node membawa keyring
+# kadaluarsa dan menghasilkan "Cannot find matching keyid" saat verifikasi pnpm.
+# Instal pnpm secara deterministik melalui npm sebagai fallback utama.
+PNPM_VERSION="${PNPM_VERSION:-10.4.1}"
+if ! command -v npm >/dev/null 2>&1; then
+  apt-get install -y npm
+fi
+if ! command -v pnpm >/dev/null 2>&1 || [ "$(pnpm --version 2>/dev/null || true)" != "$PNPM_VERSION" ]; then
+  log "Memasang pnpm $PNPM_VERSION melalui npm..."
+  npm install --global "pnpm@$PNPM_VERSION"
 fi
 
 command -v node >/dev/null || fail "Node.js gagal dipasang."
+command -v npm >/dev/null || fail "npm gagal dipasang."
 command -v pnpm >/dev/null || fail "pnpm gagal dipasang."
+[ "$(pnpm --version)" = "$PNPM_VERSION" ] || fail "Versi pnpm tidak sesuai; diharapkan $PNPM_VERSION."
 
 log "Mendeteksi IPv4 publik..."
 PUBLIC_IP="$(curl -4fsS --max-time 15 https://api.ipify.org || true)"
@@ -155,7 +173,11 @@ chmod 600 .env
 
 log "Menginstall dependency dan menyiapkan database..."
 pnpm install --frozen-lockfile
-pnpm db:migrate
+if find drizzle -maxdepth 1 -type f -name '*.sql' -print -quit | grep -q .; then
+  pnpm db:migrate
+else
+  warn "Tidak ada migration SQL; database dibiarkan kosong dan proses dilanjutkan."
+fi
 pnpm check
 pnpm build
 

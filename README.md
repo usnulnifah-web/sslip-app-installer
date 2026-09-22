@@ -49,6 +49,20 @@ Installer otomatis:
 
 Installer meminta satu input email. Jika instalasi sebelumnya terdeteksi, installer meminta `REINSTALL-SSL` agar tidak menimpa secara tidak sengaja.
 
+Installer tidak lagi bergantung pada Corepack untuk memasang pnpm. Beberapa image Node memiliki keyring Corepack yang tidak cocok dan menampilkan `Cannot find matching keyid`; installer sekarang memasang pnpm versi tetap melalui npm. Semua keluaran juga dicatat ke `/var/log/sslip-app-installer.log` agar titik kegagalan dapat diperiksa.
+
+Jika proses gagal, jalankan ulang dengan:
+
+```bash
+FORCE_REINSTALL=1 RESET_DATABASE=1 EMAIL=admin@example.com bash /tmp/sslip-app-installer/install-sslip.sh
+```
+
+Lihat detail kegagalan dengan:
+
+```bash
+tail -200 /var/log/sslip-app-installer.log
+```
+
 Jika proses migration gagal pada instalasi baru dan database masih kosong, ulangi dengan `RESET_DATABASE=1`. Opsi ini **menghapus database lokal ScriptStore yang ditentukan oleh `DB_NAME`**; jangan gunakan pada instalasi berisi data penting.
 
 ```bash
