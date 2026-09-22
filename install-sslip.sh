@@ -29,6 +29,16 @@ log() { printf '\033[1;32m[SSLIP-INSTALL]\033[0m %s\n' "$*"; CURRENT_STEP="$*"; 
 warn() { printf '\033[1;33m[WARNING]\033[0m %s\n' "$*" >&2; }
 fail() { printf '\033[1;31m[ERROR]\033[0m %s\n' "$*" >&2; exit 1; }
 
+wait_for_package_manager() {
+  local waited=0 timeout=900
+  while fuser /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/cache/apt/archives/lock >/dev/null 2>&1; do
+    [ "$waited" -lt "$timeout" ] || fail "Lock apt/dpkg masih aktif setelah ${timeout} detik. Lihat proses apt dan coba ulang."
+    if [ "$waited" -eq 0 ]; then warn "Menunggu proses apt/dpkg lain selesai..."; fi
+    sleep 5
+    waited=$((waited + 5))
+  done
+}
+
 [ "${EUID:-$(id -u)}" -eq 0 ] || fail "Jalankan sebagai root: sudo bash install-sslip.sh"
 command -v apt-get >/dev/null 2>&1 || fail "Installer ini membutuhkan Ubuntu/Debian dengan apt-get."
 command -v systemctl >/dev/null 2>&1 || fail "systemd tidak tersedia."
@@ -54,9 +64,11 @@ fi
 export DEBIAN_FRONTEND=noninteractive
 
 log "Memperbarui daftar package..."
+wait_for_package_manager
 apt-get update -y
 
 log "Memasang kebutuhan sistem..."
+wait_for_package_manager
 apt-get install -y ca-certificates curl git openssl nginx certbot python3-certbot-nginx \
   mariadb-server mariadb-client build-essential
 
