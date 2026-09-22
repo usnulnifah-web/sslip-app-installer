@@ -12,6 +12,7 @@ BRANCH="${BRANCH:-main}"
 DB_NAME="${DB_NAME:-scriptstore}"
 DB_USER="${DB_USER:-scriptstore_user}"
 PORT="${PORT:-3000}"
+RESET_DATABASE="${RESET_DATABASE:-0}"
 ORIGINAL_USER="${SUDO_USER:-}"
 
 log() { printf '\033[1;32m[SSLIP-INSTALL]\033[0m %s\n' "$*"; }
@@ -86,6 +87,15 @@ DB_PASSWORD="$(openssl rand -hex 24)"
 JWT_SECRET="$(openssl rand -hex 32)"
 
 log "Membuat database lokal..."
+if [ "$RESET_DATABASE" = "1" ]; then
+  warn "RESET_DATABASE=1: database $DB_NAME dan user $DB_USER akan dihapus lalu dibuat ulang."
+  mysql --protocol=socket -uroot <<SQL
+DROP DATABASE IF EXISTS \`$DB_NAME\`;
+DROP USER IF EXISTS '$DB_USER'@'localhost';
+DROP USER IF EXISTS '$DB_USER'@'127.0.0.1';
+FLUSH PRIVILEGES;
+SQL
+fi
 mysql --protocol=socket -uroot <<SQL
 CREATE DATABASE IF NOT EXISTS \`$DB_NAME\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER IF NOT EXISTS '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASSWORD';

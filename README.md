@@ -49,6 +49,12 @@ Installer otomatis:
 
 Installer meminta satu input email. Jika instalasi sebelumnya terdeteksi, installer meminta `REINSTALL-SSL` agar tidak menimpa secara tidak sengaja.
 
+Jika proses migration gagal pada instalasi baru dan database masih kosong, ulangi dengan `RESET_DATABASE=1`. Opsi ini **menghapus database lokal ScriptStore yang ditentukan oleh `DB_NAME`**; jangan gunakan pada instalasi berisi data penting.
+
+```bash
+FORCE_REINSTALL=1 RESET_DATABASE=1 EMAIL=admin@example.com bash /tmp/sslip-app-installer/install-sslip.sh
+```
+
 ## Informasi instalasi
 
 Setelah berhasil, kredensial database dan URL disimpan dengan permission 600 di:
